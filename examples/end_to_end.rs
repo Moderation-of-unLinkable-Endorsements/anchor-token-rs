@@ -44,7 +44,7 @@ fn main() {
     let issued = client
         .finalize(&pp, proof)
         .expect("honest issuance yields an endorsement");
-    println!("  Client finalises → endorsement on rerandomised statement (X̂, Ẑ)");
+    println!("  Client finalises → endorsement on rerandomised statement (X_hat, Z_hat)");
 
     assert!(issued.endorsement.dleq_valid(&pp));
     println!("  Endorsement's DLEQ proof is well-formed (issuer not yet bound): OK");

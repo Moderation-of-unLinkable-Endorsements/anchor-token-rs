@@ -1,12 +1,12 @@
 //! The redemption OR-proof: a Cramer–Damgård–Schoenmakers `1`-of-`n` OR over the
 //! Schnorr relation `X = w·B`.
 //!
-//! At redemption the Client proves the rerandomised key `X̂` is a scalar multiple
-//! of *some* accepted Anchor key `Xⱼ ∈ AccSet` — the second pillar of anchor
-//! hiding (the paper's redemption "proof of knowledge of `γ` such that `X̂` is in
-//! `{γ·X₁, …, γ·Xₙ}`"). Here `B` ranges over the accepted keys and `X = X̂`; the
-//! true branch `j*` uses the witness `w = γ` (so `X̂ = γ·X_{j*}`) and the others
-//! are simulated. Non-interactive via Fiat–Shamir.
+//! At redemption the Client proves the rerandomised key `X_hat` is a scalar
+//! multiple of *some* accepted Anchor key `Xⱼ ∈ AccSet` (the paper's redemption
+//! "proof of knowledge of `γ` such that `X_hat` is in `{γ·X₁, …, γ·Xₙ}`"). Here
+//! `B` ranges over the accepted keys and `X = X_hat`; the true branch `j*` uses
+//! the witness `w = γ` (so `X_hat = γ·X_{j*}`) and the others are simulated.
+//! Non-interactive via Fiat–Shamir.
 //!
 //! Crate-internal: an implementation detail of
 //! [`Presentation`](crate::Presentation). Consumers build one via
@@ -16,6 +16,7 @@
 
 use crate::hash::fiat_shamir_or;
 use crate::{Point, Scalar};
+use elliptic_curve::group::Group;
 use rand_core::{CryptoRng, RngCore};
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq};
 
@@ -116,9 +117,13 @@ impl OrProof {
 
     /// **Verify**: recompute the Fiat–Shamir master challenge from the branch
     /// commitments, then check the sub-challenges sum to it and every branch
-    /// verifies.
+    /// verifies. The identity statement `X_hat = 0` is rejected: it holds for every
+    /// base, so an OR over it would verify without a witness.
     pub(crate) fn verify(&self, accepted: &[Point], x: &Point) -> bool {
         if self.transcripts.len() != accepted.len() || accepted.is_empty() {
+            return false;
+        }
+        if bool::from(x.is_identity()) {
             return false;
         }
         // The transcripts' commitments (`tr.t`) are the FS input, so the verifier

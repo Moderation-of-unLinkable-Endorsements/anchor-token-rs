@@ -94,9 +94,9 @@ pub struct ClientNeedsProof {
     pub(crate) sig: Signature,
     /// The twisted challenge `e'`.
     pub(crate) ep: Scalar,
-    /// `X̂ = γ·X`.
+    /// `X_hat = γ·X`.
     pub(crate) x_hat: Point,
-    /// `Ẑ = γ·x·Y`.
+    /// `Z_hat = γ·x·Y`.
     pub(crate) z_hat: Point,
     /// The (untwisted) Fiat–Shamir challenge `e`.
     pub(crate) e: Scalar,
@@ -159,7 +159,7 @@ impl ClientNeedsSignature {
         )
     }
 
-    /// **Request proof** (Client → Anchor): recover `Ẑ`, form the rerandomised
+    /// **Request proof** (Client → Anchor): recover `Z_hat`, form the rerandomised
     /// proof's first messages, and send the multiplicatively-twisted challenge
     /// `e' = ε·α⁻¹·γ·e`. Consumes this state and the Anchor's [`Signature`],
     /// producing the [`ProofRequest`] to send and the state awaiting the

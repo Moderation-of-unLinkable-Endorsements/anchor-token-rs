@@ -1,17 +1,17 @@
 //! # The Anchor token protocol: pairing-free, issuer-hiding endorsements over NIST P-256
 //!
 //! A Rust implementation of the **Anchor token cryptographic protocol**, as
-//! designed by the MoLE collaborators: a pairing-free, compact issuer-hiding
-//! endorsement scheme. It is OTZZ oblivious
-//! issuance of a Chaum–Pedersen `DLEQ` proof over the Diffie–Hellman keyed MAC
-//! `Z = x·Y`, plus a CDS `1`-of-`n` OR-proof at redemption for issuer hiding.
+//! designed by the MoLE collaborators: a pairing-free, issuer-hiding
+//! endorsement scheme. It is oblivious issuance of a Chaum–Pedersen `DLEQ` proof
+//! over the Diffie–Hellman keyed MAC `Z = x·Y`, plus a CDS `1`-of-`n` OR-proof
+//! at redemption for issuer hiding.
 //!
 //! Two phases:
 //! * **Issuance** — a two-round exchange after which the Client holds a
 //!   publicly-verifiable endorsement on a *rerandomised* statement
-//!   `(X̂, Ẑ) = (γ·X, γ·x·Y)` the Anchor never sees.
+//!   `(X_hat, Z_hat) = (γ·X, γ·x·Y)` the Anchor never sees.
 //! * **Redemption** — the Client presents the endorsement with an OR-proof
-//!   that `X̂` scales some accepted Anchor key, hiding which one issued.
+//!   that `X_hat` scales some accepted Anchor key, hiding which one issued.
 //!
 //! ## Organization
 //!
@@ -83,12 +83,9 @@
 //! assert!(presentation.verify(&pp, &accepted));
 //! ```
 //!
-//! The construction follows the `GetEnd` figure in the MoLE notes
-//! (`other_approaches.tex`, the authoritative statement; the unwound prose in
-//! `main.tex` has transcription errors). Scope is correctness
-//! and the hiding structure; unforgeability rests on DDH/CDH and is out of scope
-//! for this reference implementation. The scalar field `𝔽 = ℤ_p` is [`Scalar`],
-//! the group `𝔾` is [`Point`], and `•` is point multiplication.
+//! The construction follows the `GetEnd` figure in the MoLE notes; security
+//! rests on DDH/CDH. The scalar field `𝔽 = ℤ_p` is [`Scalar`], the group `𝔾` is
+//! [`Point`], and `•` is point multiplication.
 
 #![forbid(unsafe_code)]
 

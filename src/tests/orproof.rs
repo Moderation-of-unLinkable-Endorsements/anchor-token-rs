@@ -10,7 +10,7 @@
 //! Because `OrProof`/`Transcript` expose public fields, the adversarial tests
 //! hand-craft proofs rather than only running the honest prover — that is the
 //! only way to exercise `verify`'s two lines of defence (`Σ cⱼ == c` and every
-//! branch's `sⱼ·Bⱼ == tⱼ + cⱼ·X̂`) against malicious input.
+//! branch's `sⱼ·Bⱼ == tⱼ + cⱼ·X_hat`) against malicious input.
 
 use crate::orproof::{OrProof, Transcript};
 use crate::{Point, Scalar};
@@ -136,7 +136,7 @@ fn prove_panics_on_out_of_range_index() {
 
 /// Bumping one branch's response `s` leaves the master challenge intact (the
 /// commitments are unchanged, so `Σ cⱼ == c` still holds) but breaks that
-/// branch's equation `sⱼ·Bⱼ == tⱼ + cⱼ·X̂`. Exercises the per-branch check.
+/// branch's equation `sⱼ·Bⱼ == tⱼ + cⱼ·X_hat`. Exercises the per-branch check.
 #[test]
 fn tampered_response_rejected() {
     let accepted = accepted_set(5);
@@ -189,7 +189,7 @@ fn tampered_subchallenge_rejected() {
 }
 
 /// A no-witness forgery. An adversary with no `γ` can simulate *every* branch:
-/// pick `cⱼ, sⱼ` at random and set `tⱼ = sⱼ·Bⱼ − cⱼ·X̂`, so each branch equation
+/// pick `cⱼ, sⱼ` at random and set `tⱼ = sⱼ·Bⱼ − cⱼ·X_hat`, so each branch equation
 /// holds by construction. What they cannot control is Fiat–Shamir: the master
 /// challenge `c` is fixed by the commitments they just derived, so `Σ cⱼ == c`
 /// holds only with negligible probability. This is the crux of soundness, and
@@ -204,7 +204,7 @@ fn challenge_split_forgery_rejected() {
         .map(|b| {
             let c = Scalar::random(&mut OsRng);
             let s = Scalar::random(&mut OsRng);
-            let t = *b * s - x_hat * c; // makes s·B == t + c·X̂ hold for this branch
+            let t = *b * s - x_hat * c; // makes s·B == t + c·X_hat hold for this branch
             Transcript { t, c, s }
         })
         .collect();
@@ -218,15 +218,15 @@ fn challenge_split_forgery_rejected() {
     );
 }
 
-/// Naming the wrong true branch: the prover holds a real `γ` with `X̂ = γ·Bⱼ`
+/// Naming the wrong true branch: the prover holds a real `γ` with `X_hat = γ·Bⱼ`
 /// but runs `prove` with `true_index = k ≠ j`. The honest branch `k` is built
-/// for the statement `γ·Bₖ ≠ X̂`, so its equation fails at verification.
+/// for the statement `γ·Bₖ ≠ X_hat`, so its equation fails at verification.
 #[test]
 fn wrong_true_index_rejected() {
     let accepted = accepted_set(4);
     let gamma = nonzero_scalar();
     let real_index = 1;
-    let x_hat = accepted[real_index] * gamma; // X̂ = γ·B₁
+    let x_hat = accepted[real_index] * gamma; // X_hat = γ·B₁
 
     let proof = OrProof::prove(&accepted, &x_hat, 3, gamma, &mut OsRng); // claims branch 3
     assert!(
@@ -236,27 +236,22 @@ fn wrong_true_index_rejected() {
 }
 
 // ---------------------------------------------------------------------------
-// Documented sharp edge
+// Identity statement is rejected
 // ---------------------------------------------------------------------------
 
-/// The primitive does not guard against a zero witness. With `γ = 0` the
-/// statement is `X̂ = 0·B = identity`, which holds for *every* base, so a proof
-/// verifies while binding nothing about the issuer. The full protocol never hits
-/// this: `γ` is a product of nonzero blinders and `X̂ = γ·X` for a real
-/// (non-identity) key, so `X̂` is never the identity. This test pins that
-/// precondition — if a future identity/zero guard is added, update it here.
+/// The identity statement `X_hat = 0` holds for every base, so an OR over it would
+/// bind nothing about the issuer. `verify` rejects it regardless of the witness
+/// used to build the proof.
 #[test]
-fn zero_witness_identity_statement_is_degenerate() {
+fn identity_statement_is_rejected() {
     let accepted = accepted_set(4);
     let x_hat = Point::IDENTITY;
 
-    // The same identity statement "verifies" for two different claimed branches,
-    // demonstrating it carries no issuer binding.
     for idx in [0usize, 2] {
         let proof = OrProof::prove(&accepted, &x_hat, idx, Scalar::ZERO, &mut OsRng);
         assert!(
-            proof.verify(&accepted, &x_hat),
-            "identity statement with zero witness is (degenerately) accepted"
+            !proof.verify(&accepted, &x_hat),
+            "identity statement must be rejected (claimed branch {idx})"
         );
     }
 }

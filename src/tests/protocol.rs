@@ -84,8 +84,8 @@ fn stepwise_issuance_matches_honest_run() {
     assert_eq!(end.endorsement_context, end2.endorsement_context);
 }
 
-/// The rerandomised statement is what the paper claims: `X̂ = γ·X` and
-/// `Ẑ = γ·x·Y`, both hidden from the Anchor (who only ever sees `Y' = v·Y`).
+/// The rerandomised statement is what the paper claims: `X_hat = γ·X` and
+/// `Z_hat = γ·x·Y`, both hidden from the Anchor (who only ever sees `Y' = v·Y`).
 #[test]
 fn rerandomised_statement_is_well_formed() {
     let pp = Params::standard();
@@ -100,11 +100,11 @@ fn rerandomised_statement_is_well_formed() {
 
     let x = key.public_key(&pp);
     let y = crate::hash::hash_nullifier(&nf);
-    assert_eq!(issued.endorsement.x_hat, x.pk * cr.gamma, "X̂ = γ·X");
+    assert_eq!(issued.endorsement.x_hat, x.pk * cr.gamma, "X_hat = γ·X");
     assert_eq!(
         issued.endorsement.z_hat,
         y * (cr.gamma * key.sk),
-        "Ẑ = γ·x·Y"
+        "Z_hat = γ·x·Y"
     );
 }
 
@@ -151,12 +151,71 @@ fn tampered_endorsements_are_rejected() {
 
     let mut t = end.clone();
     t.x_hat += pp.g;
-    assert!(!t.dleq_valid(&pp), "tampered X̂");
+    assert!(!t.dleq_valid(&pp), "tampered X_hat");
 
     // The `a ≠ 0` guard.
     let mut t = end;
     t.a = Scalar::ZERO;
     assert!(!t.dleq_valid(&pp), "a = 0 must be rejected");
+}
+
+/// Identity-point forgery: with `X_hat = Z_hat = 0` the challenge cancels from the
+/// DLEQ recomputation, so an attacker can fake a self-consistent endorsement,
+/// and the OR-proof accepts the identity for every base. Both `dleq_valid` and
+/// `verify` must reject it.
+#[test]
+fn identity_point_forgery_is_rejected() {
+    use crate::hash::{fiat_shamir, hash_nullifier, pedersen_generator};
+    use crate::orproof::OrProof;
+    use crate::{Endorsement, Presentation};
+
+    let pp = Params::standard();
+    let mut rng = OsRng;
+
+    let anchors: Vec<AnchorSecretKey> = (0..4).map(|_| AnchorSecretKey::random(&mut rng)).collect();
+    let accepted: Vec<AnchorPublicKey> = anchors.iter().map(|k| k.public_key(&pp)).collect();
+    let keys: Vec<Point> = accepted.iter().map(|k| k.pk).collect();
+
+    // Forge a self-consistent DLEQ transcript around the identity statement.
+    let x_hat = Point::IDENTITY;
+    let z_hat = Point::IDENTITY;
+    let nf = b"attacker-chosen".to_vec();
+    let ctx = CTX.to_vec();
+    let y = hash_nullifier(&nf);
+    let a = Scalar::ONE; // any nonzero a
+    let b = random_nonzero_scalar(&mut rng);
+    let r = random_nonzero_scalar(&mut rng);
+    let t1 = y * r; // = y·r − z_hat·(e·a) with z_hat = 0
+    let t2 = pp.g * r; // = g·r − x_hat·(e·a) with x_hat = 0
+    let h = pedersen_generator(&ctx);
+    let c = pp.g * a + h * b;
+    let e = fiat_shamir(&x_hat, &y, &z_hat, &t1, &t2, &c, &ctx);
+
+    let endorsement = Endorsement {
+        x_hat,
+        z_hat,
+        nf,
+        e,
+        a,
+        b,
+        r,
+        endorsement_context: ctx,
+    };
+    assert!(
+        !endorsement.dleq_valid(&pp),
+        "identity endorsement must be rejected by dleq_valid"
+    );
+
+    // Even paired with an OR-proof over the identity statement, verify rejects.
+    let or_proof = OrProof::prove(&keys, &x_hat, 0, Scalar::ZERO, &mut rng);
+    let forgery = Presentation {
+        endorsement,
+        or_proof,
+    };
+    assert!(
+        !forgery.verify(&pp, &accepted),
+        "forged identity presentation must be rejected"
+    );
 }
 
 /// A wrong-key anchor cannot make the client's finalize checks pass: if the
@@ -202,7 +261,7 @@ fn pedersen_generator_is_context_bound() {
 }
 
 /// The OR-proof Fiat–Shamir transcript is length-framed: two differently-shaped
-/// `(accepted, X̂, commitments)` triples that share the same flat point sequence
+/// `(accepted, X_hat, commitments)` triples that share the same flat point sequence
 /// must still produce different challenges. Without length framing these collide.
 #[test]
 fn or_challenge_is_length_framed() {
@@ -274,7 +333,7 @@ fn or_proof_completeness_and_soundness() {
         let x_hat_other = accepted[true_index] * (gamma + Scalar::ONE);
         assert!(
             !proof.verify(&accepted, &x_hat_other),
-            "OR proof bound to X̂ only"
+            "OR proof bound to X_hat only"
         );
     }
 
@@ -345,7 +404,7 @@ fn redemption_fails_for_unaccepted_issuer() {
     let nf = random_nullifier(&mut rng);
     let issued = honest_run(&pp, &rogue, cr, ar, nf, CTX.to_vec()).unwrap();
 
-    // The endorsement's DLEQ is well-formed on its own (X̂ is unconstrained, so
+    // The endorsement's DLEQ is well-formed on its own (X_hat is unconstrained, so
     // this says nothing about the issuer)...
     assert!(issued.endorsement.dleq_valid(&pp));
 

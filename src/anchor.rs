@@ -11,7 +11,7 @@
 //! ```
 //!
 //! The Anchor never sees the unblinded nullifier `Y`, the rerandomised
-//! statement `(X̂, Ẑ)`, or the untwisted challenge `e` — only the blinded
+//! statement `(X_hat, Z_hat)`, or the untwisted challenge `e` — only the blinded
 //! `Y' = v·Y` and the twisted `e' = ε·α⁻¹·γ·e`. It *does* learn the endorsement
 //! context (public metadata), which it needs to derive the context-bound
 //! Pedersen generator `H` when forming `C'`.

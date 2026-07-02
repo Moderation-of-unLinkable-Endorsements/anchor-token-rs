@@ -65,10 +65,10 @@ fn len_prefix(n: usize) -> [u8; 8] {
     (n as u64).to_le_bytes()
 }
 
-/// The Fiat–Shamir challenge `e = H_FS(X̂, Y, Ẑ, T₁, T₂, C, ctx)` of the issuance
+/// The Fiat–Shamir challenge `e = H_FS(X_hat, Y, Z_hat, T₁, T₂, C, ctx)` of the issuance
 /// proof (the `HFS` of the `GetEnd` figure, strengthened to bind the *full*
-/// statement: the rerandomised key `X̂` — so a proof cannot be transported to a
-/// different `X̂` — and the endorsement context, so the finished endorsement
+/// statement: the rerandomised key `X_hat` — so a proof cannot be transported to a
+/// different `X_hat` — and the endorsement context, so the finished endorsement
 /// commits to it). The six fixed-width points are bound in order; the
 /// variable-length context is length-prefixed, keeping the encoding injective.
 pub(crate) fn fiat_shamir(
@@ -96,8 +96,8 @@ pub(crate) fn fiat_shamir(
 }
 
 /// The Fiat–Shamir challenge for the redemption OR-proof: hashes the accepted
-/// Anchor keys, the rerandomised key `X̂`, and the OR commitments. Binding
-/// `AccSet` and `X̂` (not just the commitments) is a soundness improvement in
+/// Anchor keys, the rerandomised key `X_hat`, and the OR commitments. Binding
+/// `AccSet` and `X_hat` (not just the commitments) is a soundness improvement in
 /// the ROM; each variable-count group is length-prefixed, so the transcript is
 /// injective for any shape — not only when the number of keys equals the number
 /// of commitments.

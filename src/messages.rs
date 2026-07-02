@@ -63,15 +63,15 @@ pub struct Proof {
 }
 
 /// The endorsement: a publicly-verifiable `DLEQ` proof on the rerandomised
-/// statement `(X̂, Ẑ)`. Produced by
+/// statement `(X_hat, Z_hat)`. Produced by
 /// [`ClientNeedsProof::finalize`](crate::client::ClientNeedsProof::finalize)
 /// (inside an [`IssuedEndorsement`](crate::client::IssuedEndorsement), which
 /// also carries the witness needed to present it).
 #[derive(Clone, Debug)]
 pub struct Endorsement {
-    /// `X̂ = γ·X`.
+    /// `X_hat = γ·X`.
     pub x_hat: Point,
-    /// `Ẑ = γ·x·Y`.
+    /// `Z_hat = γ·x·Y`.
     pub z_hat: Point,
     /// The issuance nullifier.
     pub nf: Vec<u8>,
@@ -89,17 +89,24 @@ pub struct Endorsement {
 }
 
 impl Endorsement {
-    /// Check the endorsement's Chaum–Pedersen `DLEQ` proof: the `a ≠ 0` and
-    /// `Y ≠ 0` guards and the Fiat–Shamir check (recomputing `T₁, T₂, C`, with
-    /// `X̂` and the endorsement context bound into the challenge).
+    /// Check the endorsement's Chaum–Pedersen `DLEQ` proof: the `a ≠ 0`,
+    /// `Y ≠ 0`, and `X_hat, Z_hat ≠ 0` guards and the Fiat–Shamir check
+    /// (recomputing `T₁, T₂, C`, with `X_hat` and the endorsement context bound
+    /// into the challenge). The identity guard matters: `X_hat = Z_hat = 0`
+    /// cancels the `e·a` terms from the transcript, so without it a forged
+    /// endorsement would pass.
     ///
-    /// **This is not acceptance.** It only says `(G, X̂, Y, Ẑ)` is a well-formed
-    /// DH tuple; because it never references an anchor key, `X̂` is unconstrained
-    /// and anyone can mint a passing endorsement. Binding `X̂` to an accepted
-    /// anchor is the redemption OR-proof's job, so the acceptance decision is
-    /// [`Presentation::verify`], which takes a full [`Presentation`].
+    /// **This is not acceptance.** It only says `(G, X_hat, Y, Z_hat)` is a
+    /// well-formed DH tuple; because it never references an anchor key, `X_hat`
+    /// is unconstrained and anyone can mint a passing endorsement. Binding
+    /// `X_hat` to an accepted anchor is the redemption OR-proof's job, so the
+    /// acceptance decision is [`Presentation::verify`], which takes a full
+    /// [`Presentation`].
     pub fn dleq_valid(&self, pp: &Params) -> bool {
         if self.a == Scalar::ZERO {
+            return false;
+        }
+        if bool::from(self.x_hat.is_identity()) || bool::from(self.z_hat.is_identity()) {
             return false;
         }
         let y = hash_nullifier(&self.nf);
@@ -126,14 +133,14 @@ impl Endorsement {
 
 /// Client → Verifier: a redemption presentation, the endorsement and the
 /// accepted-set OR-proof. Corresponds to the MoLE notes' `Show` figure
-/// `ρ_A = (X̂, Ẑ, nf, a, b, r)` together with `π_AccSet`. Built by
+/// `ρ_A = (X_hat, Z_hat, nf, a, b, r)` together with `π_AccSet`. Built by
 /// [`IssuedEndorsement::show`](crate::client::IssuedEndorsement::show),
 /// accepted (or not) by [`Presentation::verify`].
 #[derive(Clone, Debug)]
 pub struct Presentation {
     /// The endorsement.
     pub endorsement: Endorsement,
-    /// `1`-of-`n` OR-proof that `X̂` is a `γ`-scaling of an accepted key.
+    /// `1`-of-`n` OR-proof that `X_hat` is a `γ`-scaling of an accepted key.
     /// Internal to the presentation — built by
     /// [`show`](crate::client::IssuedEndorsement::show), checked by
     /// [`verify`](Presentation::verify).

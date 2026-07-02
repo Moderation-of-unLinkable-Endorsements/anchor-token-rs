@@ -80,11 +80,11 @@ Verifier use.
 
 ```
 struct {
-    Point    x_hat;              /* X̂ = γ·X  */
-    Point    z_hat;              /* Ẑ = γ·x·Y */
+    Point    x_hat;              /* X_hat = γ·X  */
+    Point    z_hat;              /* Z_hat = γ·x·Y */
     VarBytes nf;                 /* nullifier */
     Scalar   e;                  /* Fiat–Shamir challenge
-                                    e = H_FS(X̂, Y, Ẑ, T1, T2, C, endorsement_context) */
+                                    e = H_FS(X_hat, Y, Z_hat, T1, T2, C, endorsement_context) */
     Scalar   a;
     Scalar   b;
     Scalar   r;
@@ -104,7 +104,7 @@ struct {
 
 struct {
     Endorsement endorsement;
-    OrProof     or_proof;        /* 1-of-n OR-proof that X̂ = γ·Xⱼ for some Xⱼ in the accepted set */
+    OrProof     or_proof;        /* 1-of-n OR-proof that X_hat = γ·Xⱼ for some Xⱼ in the accepted set */
 } Presentation;                  /* Client -> Verifier */
 ```
 
