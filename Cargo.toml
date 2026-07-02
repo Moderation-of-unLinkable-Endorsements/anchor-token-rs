@@ -1,0 +1,32 @@
+[package]
+name = "anchor-token-rs"
+version = "0.1.0"
+edition = "2021"
+description = "The Anchor token cryptographic protocol (designed by the MoLE collaborators): pairing-free, issuer-hiding endorsements over NIST P-256"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+keywords = ["cryptography", "anonymous-credentials", "zero-knowledge", "privacy", "p256"]
+categories = ["cryptography"]
+
+[lib]
+name = "anchor_token"
+
+[dependencies]
+p256 = { version = "0.13", default-features = false, features = ["arithmetic", "hash2curve"] }
+elliptic-curve = { version = "0.13", features = ["arithmetic", "hash2curve"] }
+subtle = "2"
+sha2 = "0.10"
+rand_core = "0.6"
+serde = { version = "1", optional = true, default-features = false }
+
+[features]
+serde = ["dep:serde", "serde/alloc"]
+
+[dev-dependencies]
+rand_core = { version = "0.6", features = ["getrandom"] }
+criterion = "0.5"
+serde_json = "1"
+
+[[bench]]
+name = "protocol"
+harness = false
