@@ -46,6 +46,14 @@ cargo run --example end_to_end
 cargo bench
 ```
 
+## Wire format
+
+Messages have a canonical byte encoding — the TLS 1.3 presentation language,
+specified in [docs/wire-format.md](docs/wire-format.md) and implemented by the
+`WireFormat` trait (`to_bytes` / `from_bytes`). Enabling the `serde` feature
+wires this into serde: `Serialize` / `Deserialize` produce the same canonical
+bytes, so the messages embed cleanly in other serializable types.
+
 ## License
 
 Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or

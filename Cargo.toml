@@ -5,6 +5,7 @@ edition = "2021"
 description = "The Anchor token cryptographic protocol (designed by the MoLE collaborators): pairing-free, issuer-hiding endorsements over NIST P-256"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
+repository = "https://github.com/Moderation-of-unLinkable-Endorsements/anchor-token-rs"
 keywords = ["cryptography", "anonymous-credentials", "zero-knowledge", "privacy", "p256"]
 categories = ["cryptography"]
 

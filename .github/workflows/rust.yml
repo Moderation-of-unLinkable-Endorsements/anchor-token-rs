@@ -10,13 +10,20 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
+  check:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+      - uses: actions/checkout@v4
+      - run: rustup component add rustfmt clippy
+      - name: Format
+        run: cargo fmt --all --check
+      - name: Clippy
+        run: |
+          cargo clippy --all-targets -- -D warnings
+          cargo clippy --all-targets --features serde -- -D warnings
+      - name: Test
+        run: |
+          cargo test
+          cargo test --features serde
+      - name: Docs
+        run: RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --features serde
