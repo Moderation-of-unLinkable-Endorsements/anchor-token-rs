@@ -13,7 +13,8 @@ impl Presentation {
     /// is accepted iff the endorsement's `DLEQ` proof is well-formed **and**
     /// the OR-proof binds `X_hat` to some key in the accepted set. Both are
     /// required, so an endorsement alone can never be accepted (see
-    /// [`Endorsement::dleq_valid`](crate::Endorsement::dleq_valid)).
+    /// [`Endorsement::dleq_valid`](crate::Endorsement::dleq_valid)). A degenerate
+    /// `accepted` set containing the identity key is rejected.
     ///
     /// Note: this is a pure predicate with no replay or double-spend protection
     /// — the same [`Presentation`] verifies every time, and its `nf` is in the

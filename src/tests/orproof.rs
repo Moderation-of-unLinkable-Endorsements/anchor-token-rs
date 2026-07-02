@@ -115,6 +115,23 @@ fn duplicate_keys_complete() {
     }
 }
 
+/// An identity key in the accepted set is a degenerate policy (a zero base is a
+/// meaningless anchor), so `verify` rejects it — even for an otherwise-honest
+/// proof built against a real, non-identity branch of the same set.
+#[test]
+fn identity_key_in_accepted_set_rejected() {
+    let mut accepted = accepted_set(3);
+    accepted[1] = Point::IDENTITY; // a zero base at branch 1
+    let gamma = nonzero_scalar();
+
+    let x_hat = accepted[0] * gamma; // honest proof for a real branch
+    let proof = OrProof::prove(&accepted, &x_hat, 0, gamma, &mut OsRng);
+    assert!(
+        !proof.verify(&accepted, &x_hat),
+        "accepted set with an identity key must be rejected"
+    );
+}
+
 /// `prove` requires a non-empty accepted set.
 #[test]
 #[should_panic(expected = "accepted set must be non-empty")]

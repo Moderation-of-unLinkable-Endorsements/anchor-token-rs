@@ -117,13 +117,14 @@ impl OrProof {
 
     /// **Verify**: recompute the Fiat–Shamir master challenge from the branch
     /// commitments, then check the sub-challenges sum to it and every branch
-    /// verifies. The identity statement `X_hat = 0` is rejected: it holds for every
-    /// base, so an OR over it would verify without a witness.
+    /// verifies. Rejects degenerate inputs: the identity statement `X_hat = 0`
+    /// (satisfiable for every base, so it would verify without a witness) and any
+    /// identity key in the accepted set (a zero base is a meaningless anchor).
     pub(crate) fn verify(&self, accepted: &[Point], x: &Point) -> bool {
         if self.transcripts.len() != accepted.len() || accepted.is_empty() {
             return false;
         }
-        if bool::from(x.is_identity()) {
+        if bool::from(x.is_identity()) || accepted.iter().any(|b| bool::from(b.is_identity())) {
             return false;
         }
         // The transcripts' commitments (`tr.t`) are the FS input, so the verifier
