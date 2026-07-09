@@ -1,7 +1,7 @@
-# anchor-token-rs
+# ihat-rs
 
-A Rust implementation of the Anchor token cryptographic protocol, as
-designed by the MoLE collaborators — a pairing-free, issuer-hiding endorsement
+A Rust implementation of the ihat cryptographic protocol, as
+designed by the MoLE collaborators: a pairing-free, issuer-hiding endorsement
 scheme over NIST P-256. A client obtains a blind endorsement from an anchor,
 then redeems it with a 1-of-n OR-proof that hides which anchor issued it.
 
