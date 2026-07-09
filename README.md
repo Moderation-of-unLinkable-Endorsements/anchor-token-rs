@@ -11,9 +11,9 @@ then redeems it with a 1-of-n OR-proof that hides which anchor issued it.
 
 ```rust
 use rand_core::{OsRng, RngCore};
-use anchor_token::anchor::AnchorSecretKey;
-use anchor_token::client::ClientNeedsSignature;
-use anchor_token::Params;
+use ihat::anchor::AnchorSecretKey;
+use ihat::client::ClientNeedsSignature;
+use ihat::Params;
 
 let pp = Params::standard();
 let mut rng = OsRng;

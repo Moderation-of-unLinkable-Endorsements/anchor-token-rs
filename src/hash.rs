@@ -15,13 +15,13 @@ use p256::NistP256;
 use sha2::Sha256;
 
 /// Domain-separation tag for `H₁`, the hash-to-group applied to nullifiers.
-const DST_H1: &[u8] = b"MOLE-AnchorToken-P256:H1-nullifier-to-group:v1";
+const DST_H1: &[u8] = b"MOLE-IHAT-P256:H1-nullifier-to-group:v1";
 
 /// Domain-separation tag for the Fiat–Shamir challenge hash of an issuance.
-const DST_FS: &[u8] = b"MOLE-AnchorToken-P256:fiat-shamir-getend:v1";
+const DST_FS: &[u8] = b"MOLE-IHAT-P256:fiat-shamir-getend:v1";
 
 /// Domain-separation tag for the context-bound Pedersen generator `H`.
-const DST_H: &[u8] = b"MOLE-AnchorToken-P256:pedersen-generator-H:v1";
+const DST_H: &[u8] = b"MOLE-IHAT-P256:pedersen-generator-H:v1";
 
 /// Generic hash-to-group with an explicit domain-separation tag. Used both for
 /// deriving the Pedersen generator `H` and (via [`hash_nullifier`]) for `H₁`.
@@ -102,7 +102,7 @@ pub(crate) fn fiat_shamir(
 /// injective for any shape — not only when the number of keys equals the number
 /// of commitments.
 pub(crate) fn fiat_shamir_or(accepted: &[Point], x_hat: &Point, commitments: &[Point]) -> Scalar {
-    const DST_OR: &[u8] = b"MOLE-AnchorToken-P256:fiat-shamir-or-proof:v1";
+    const DST_OR: &[u8] = b"MOLE-IHAT-P256:fiat-shamir-or-proof:v1";
     let n_acc = len_prefix(accepted.len());
     let n_com = len_prefix(commitments.len());
     let acc: Vec<[u8; 33]> = accepted.iter().map(compress).collect();

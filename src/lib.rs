@@ -1,6 +1,6 @@
-//! # The Anchor token protocol: pairing-free, issuer-hiding endorsements over NIST P-256
+//! # IHAT: pairing-free, issuer-hiding anonymous tokens over NIST P-256
 //!
-//! A Rust implementation of the **Anchor token cryptographic protocol**, as
+//! A Rust implementation of the **IHAT (issuer-hiding anonymous token) cryptographic protocol**, as
 //! designed by the MoLE collaborators: a pairing-free, issuer-hiding
 //! endorsement scheme. It is oblivious issuance of a Chaum–Pedersen `DLEQ` proof
 //! over the Diffie–Hellman keyed MAC `Z = x·Y`, plus a CDS `1`-of-`n` OR-proof
@@ -57,9 +57,9 @@
 //!
 //! ```
 //! use rand_core::OsRng;
-//! use anchor_token::anchor::AnchorSecretKey;
-//! use anchor_token::client::ClientNeedsSignature;
-//! use anchor_token::Params;
+//! use ihat::anchor::AnchorSecretKey;
+//! use ihat::client::ClientNeedsSignature;
+//! use ihat::Params;
 //!
 //! let pp = Params::standard();
 //! let mut rng = OsRng;

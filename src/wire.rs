@@ -1,4 +1,4 @@
-//! The Anchor token wire format: a native implementation of the TLS 1.3
+//! The IHAT wire format: a native implementation of the TLS 1.3
 //! presentation-language encoding specified in `docs/wire-format.md`.
 //!
 //! Every protocol message implements [`WireFormat`], giving a canonical
@@ -298,7 +298,7 @@ mod serde_impls {
         type Value = T;
 
         fn expecting(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            f.write_str("Anchor token wire bytes")
+            f.write_str("IHAT wire bytes")
         }
 
         fn visit_bytes<E: de::Error>(self, v: &[u8]) -> Result<T, E> {

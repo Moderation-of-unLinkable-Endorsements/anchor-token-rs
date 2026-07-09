@@ -1,4 +1,4 @@
-//! End-to-end tests for the Anchor token issuer-hiding endorsement protocol.
+//! End-to-end tests for the IHAT issuer-hiding endorsement protocol.
 
 use crate::anchor::{AnchorNeedsProofRequest, AnchorPublicKey, AnchorRandomness, AnchorSecretKey};
 use crate::client::{ClientNeedsSignature, ClientRandomness};

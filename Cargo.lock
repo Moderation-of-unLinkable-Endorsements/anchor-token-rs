@@ -12,20 +12,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "anchor-token-rs"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "elliptic-curve",
- "p256",
- "rand_core",
- "serde",
- "serde_json",
- "sha2",
- "subtle",
-]
-
-[[package]]
 name = "anes"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -359,6 +345,20 @@ name = "hermit-abi"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc0fef456e4baa96da950455cd02c081ca953b141298e41db3fc7e36b1da849c"
+
+[[package]]
+name = "ihat-rs"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "elliptic-curve",
+ "p256",
+ "rand_core",
+ "serde",
+ "serde_json",
+ "sha2",
+ "subtle",
+]
 
 [[package]]
 name = "is-terminal"

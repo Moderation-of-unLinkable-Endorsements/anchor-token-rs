@@ -1,12 +1,12 @@
-//! A runnable walkthrough of the Anchor token issuer-hiding endorsement
+//! A runnable walkthrough of the IHAT issuer-hiding endorsement
 //! protocol: four-message issuance driven through the type-indexed state
 //! machine, then issuer-hiding redemption against a set of accepted anchors.
 //!
 //! Run with: `cargo run --example end_to_end`
 
-use anchor_token::anchor::{AnchorPublicKey, AnchorSecretKey};
-use anchor_token::client::ClientNeedsSignature;
-use anchor_token::Params;
+use ihat::anchor::{AnchorPublicKey, AnchorSecretKey};
+use ihat::client::ClientNeedsSignature;
+use ihat::Params;
 use rand_core::{OsRng, RngCore};
 
 fn main() {

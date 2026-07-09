@@ -1,4 +1,4 @@
-# Anchor token wire format
+# IHAT wire format
 
 The canonical byte encoding of the protocol's messages, written in the **TLS 1.3
 presentation language** (RFC 8446 §3). Each structure here maps field-for-field
@@ -112,7 +112,7 @@ struct {
 
 - **Domain separation.** The hashes (`H₁`, `H_FS`, the OR-proof challenge, and
   `H`) are RFC 9380 constructions over P-256, each with a distinct tag of the
-  form `MOLE-AnchorToken-P256:<use>:v1`. They are not part of the wire format but
+  form `MOLE-IHAT-P256:<use>:v1`. They are not part of the wire format but
   are fixed by the protocol.
 - **Length framing.** The Fiat–Shamir transcripts length-prefix every
   variable-count group, so hashing is injective independent of this wire framing.

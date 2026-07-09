@@ -1,16 +1,16 @@
 [package]
-name = "anchor-token-rs"
+name = "ihat-rs"
 version = "0.1.0"
 edition = "2021"
-description = "The Anchor token cryptographic protocol (designed by the MoLE collaborators): pairing-free, issuer-hiding endorsements over NIST P-256"
+description = "IHAT (issuer-hiding anonymous token), a cryptographic protocol designed by the MoLE collaborators: pairing-free, issuer-hiding endorsements over NIST P-256"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
-repository = "https://github.com/Moderation-of-unLinkable-Endorsements/anchor-token-rs"
+repository = "https://github.com/Moderation-of-unLinkable-Endorsements/ihat-rs"
 keywords = ["cryptography", "anonymous-credentials", "zero-knowledge", "privacy", "p256"]
 categories = ["cryptography"]
 
 [lib]
-name = "anchor_token"
+name = "ihat"
 
 [dependencies]
 p256 = { version = "0.13", default-features = false, features = ["arithmetic", "hash2curve"] }

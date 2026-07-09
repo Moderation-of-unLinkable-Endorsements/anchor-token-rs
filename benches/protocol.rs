@@ -1,4 +1,4 @@
-//! Criterion benchmarks for the Anchor token issuer-hiding endorsement protocol.
+//! Criterion benchmarks for the IHAT issuer-hiding endorsement protocol.
 //!
 //! Groups:
 //! * `issuance`   — each GetEnd party-step and the full four-message run.
@@ -11,9 +11,9 @@
 
 use std::time::Duration;
 
-use anchor_token::anchor::{AnchorPublicKey, AnchorSecretKey};
-use anchor_token::client::{ClientNeedsSignature, IssuedEndorsement};
-use anchor_token::Params;
+use ihat::anchor::{AnchorPublicKey, AnchorSecretKey};
+use ihat::client::{ClientNeedsSignature, IssuedEndorsement};
+use ihat::Params;
 use criterion::{criterion_group, criterion_main, BatchSize, BenchmarkId, Criterion};
 use rand_core::{OsRng, RngCore};
 
