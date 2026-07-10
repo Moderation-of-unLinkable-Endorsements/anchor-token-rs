@@ -250,16 +250,32 @@ impl IssuedEndorsement {
     /// the secret position of the issuing Anchor within it (so
     /// `endorsement.x_hat == gamma · accepted[true_index]`).
     ///
+    /// `binding` scopes the presentation: it is hashed into the OR-proof's
+    /// Fiat–Shamir challenge, so [`Presentation::verify`] succeeds only under
+    /// the identical bytes. Callers pass the context that requested the
+    /// presentation — e.g. MoLE's `challenge_digest`, the hash of the
+    /// Moderator's challenge — so a presentation produced for one challenge
+    /// cannot be replayed against another. Pass `b""` only when the deployment
+    /// has no such context.
+    ///
     /// # Panics
     /// If `true_index >= accepted.len()` or the accepted set is empty.
     pub fn show<R: RngCore + CryptoRng>(
         self,
         accepted: &[AnchorPublicKey],
         true_index: usize,
+        binding: &[u8],
         rng: &mut R,
     ) -> Presentation {
         let keys: Vec<Point> = accepted.iter().map(|k| k.pk).collect();
-        let or_proof = OrProof::prove(&keys, &self.endorsement.x_hat, true_index, self.gamma, rng);
+        let or_proof = OrProof::prove(
+            &keys,
+            &self.endorsement.x_hat,
+            true_index,
+            self.gamma,
+            binding,
+            rng,
+        );
         Presentation {
             endorsement: self.endorsement,
             or_proof,

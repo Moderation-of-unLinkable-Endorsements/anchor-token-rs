@@ -49,7 +49,10 @@ pub(crate) struct OrProof {
 impl OrProof {
     /// **Prove** (non-interactive, Fiat–Shamir): `X = γ·B[true_index]` for a
     /// hidden `true_index`. Decoy branches are simulated; the real branch absorbs
-    /// the master challenge so the sub-challenges sum to it.
+    /// the master challenge so the sub-challenges sum to it. `binding` is
+    /// caller-supplied bytes hashed into the master challenge, scoping the proof
+    /// to the context that requested it (see
+    /// [`show`](crate::client::IssuedEndorsement::show)).
     ///
     /// Constant-time in the secret `true_index`: no control flow depends on it.
     /// The real base `B_{j*}` is recovered with a `subtle` select over the
@@ -64,6 +67,7 @@ impl OrProof {
         x: &Point,
         true_index: usize,
         witness: Scalar,
+        binding: &[u8],
         rng: &mut R,
     ) -> OrProof {
         let n = accepted.len();
@@ -100,7 +104,7 @@ impl OrProof {
             })
             .collect();
 
-        let c = fiat_shamir_or(accepted, x, &commitments);
+        let c = fiat_shamir_or(accepted, x, &commitments, binding);
         let c_real = c - (total - cdec_real); // c − Σ_{l≠j*} cdec[l]
         let s_real = k + c_real * witness;
 
@@ -116,11 +120,13 @@ impl OrProof {
     }
 
     /// **Verify**: recompute the Fiat–Shamir master challenge from the branch
-    /// commitments, then check the sub-challenges sum to it and every branch
-    /// verifies. Rejects degenerate inputs: the identity statement `X_hat = 0`
-    /// (satisfiable for every base, so it would verify without a witness) and any
-    /// identity key in the accepted set (a zero base is a meaningless anchor).
-    pub(crate) fn verify(&self, accepted: &[Point], x: &Point) -> bool {
+    /// commitments (under the same `binding` the prover used — any other value
+    /// yields a different master challenge, so the proof fails), then check the
+    /// sub-challenges sum to it and every branch verifies. Rejects degenerate
+    /// inputs: the identity statement `X_hat = 0` (satisfiable for every base, so
+    /// it would verify without a witness) and any identity key in the accepted
+    /// set (a zero base is a meaningless anchor).
+    pub(crate) fn verify(&self, accepted: &[Point], x: &Point, binding: &[u8]) -> bool {
         if self.transcripts.len() != accepted.len() || accepted.is_empty() {
             return false;
         }
@@ -130,7 +136,7 @@ impl OrProof {
         // The transcripts' commitments (`tr.t`) are the FS input, so the verifier
         // reconstructs the master challenge from them.
         let commitments: Vec<Point> = self.transcripts.iter().map(|tr| tr.t).collect();
-        let c = fiat_shamir_or(accepted, x, &commitments);
+        let c = fiat_shamir_or(accepted, x, &commitments, binding);
 
         let sum: Scalar = self
             .transcripts

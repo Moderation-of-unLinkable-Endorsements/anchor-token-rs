@@ -26,6 +26,9 @@ fn random_nonzero_scalar<R: RngCore>(rng: &mut R) -> Scalar {
 
 const CTX: &[u8] = b"epoch-2026-07";
 
+/// The presentation binding (e.g. a challenge digest) used throughout.
+const BINDING: &[u8] = b"protocol-test-binding";
+
 /// An honest end-to-end issuance produces a well-formed endorsement (its DLEQ
 /// proof checks out) — protocol correctness.
 #[test]
@@ -207,13 +210,13 @@ fn identity_point_forgery_is_rejected() {
     );
 
     // Even paired with an OR-proof over the identity statement, verify rejects.
-    let or_proof = OrProof::prove(&keys, &x_hat, 0, Scalar::ZERO, &mut rng);
+    let or_proof = OrProof::prove(&keys, &x_hat, 0, Scalar::ZERO, BINDING, &mut rng);
     let forgery = Presentation {
         endorsement,
         or_proof,
     };
     assert!(
-        !forgery.verify(&pp, &accepted),
+        !forgery.verify(&pp, &accepted, BINDING),
         "forged identity presentation must be rejected"
     );
 }
@@ -274,9 +277,14 @@ fn or_challenge_is_length_framed() {
         hash_nullifier(b"e"),
     );
     // Both hash the flat sequence [A, B, C, D, E], split differently.
-    let c1 = fiat_shamir_or(&[a, b, c], &d, &[e]);
-    let c2 = fiat_shamir_or(&[a], &b, &[c, d, e]);
+    let c1 = fiat_shamir_or(&[a, b, c], &d, &[e], BINDING);
+    let c2 = fiat_shamir_or(&[a], &b, &[c, d, e], BINDING);
     assert_ne!(c1, c2, "length framing must prevent shape collisions");
+
+    // The binding is framed too: shifting bytes between it and nothing must
+    // not collide with a differently-bound transcript of the same points.
+    let c3 = fiat_shamir_or(&[a, b, c], &d, &[e], b"");
+    assert_ne!(c1, c3, "binding must be part of the transcript");
 }
 
 /// The Anchor must sign under the same endorsement context the Client finalizes
@@ -323,16 +331,16 @@ fn or_proof_completeness_and_soundness() {
         let gamma = random_nonzero_scalar(&mut rng);
         let x_hat = accepted[true_index] * gamma;
 
-        let proof = OrProof::prove(&accepted, &x_hat, true_index, gamma, &mut rng);
+        let proof = OrProof::prove(&accepted, &x_hat, true_index, gamma, BINDING, &mut rng);
         assert!(
-            proof.verify(&accepted, &x_hat),
+            proof.verify(&accepted, &x_hat, BINDING),
             "honest OR proof must verify (branch {true_index})"
         );
 
         // Same proof against a different statement must fail.
         let x_hat_other = accepted[true_index] * (gamma + Scalar::ONE);
         assert!(
-            !proof.verify(&accepted, &x_hat_other),
+            !proof.verify(&accepted, &x_hat_other, BINDING),
             "OR proof bound to X_hat only"
         );
     }
@@ -341,9 +349,9 @@ fn or_proof_completeness_and_soundness() {
     let true_index = 3;
     let gamma = random_nonzero_scalar(&mut rng);
     let x_hat = accepted[true_index] * gamma;
-    let wrong = OrProof::prove(&accepted, &x_hat, true_index, gamma + Scalar::ONE, &mut rng);
+    let wrong = OrProof::prove(&accepted, &x_hat, true_index, gamma + Scalar::ONE, BINDING, &mut rng);
     assert!(
-        !wrong.verify(&accepted, &x_hat),
+        !wrong.verify(&accepted, &x_hat, BINDING),
         "wrong witness must not verify"
     );
 
@@ -351,9 +359,9 @@ fn or_proof_completeness_and_soundness() {
     let outsider = AnchorSecretKey::random(&mut rng);
     let gamma = random_nonzero_scalar(&mut rng);
     let x_hat = outsider.public_key(&pp).pk * gamma; // not γ·accepted[j] for any known j
-    let attempt = OrProof::prove(&accepted, &x_hat, 0, gamma, &mut rng);
+    let attempt = OrProof::prove(&accepted, &x_hat, 0, gamma, BINDING, &mut rng);
     assert!(
-        !attempt.verify(&accepted, &x_hat),
+        !attempt.verify(&accepted, &x_hat, BINDING),
         "non-member statement must not verify"
     );
 }
@@ -377,9 +385,9 @@ fn full_redemption_hides_the_issuer() {
         // `IssuedEndorsement` carries the OR witness γ, so `show` needs nothing
         // squirreled away from issuance.
         let issued = honest_run(&pp, issuing, cr, ar, nf, CTX.to_vec()).unwrap();
-        let pres = issued.show(&accepted, true_index, &mut rng);
+        let pres = issued.show(&accepted, true_index, BINDING, &mut rng);
         assert!(
-            pres.verify(&pp, &accepted),
+            pres.verify(&pp, &accepted, BINDING),
             "redemption must verify (issuer {true_index})"
         );
     }
@@ -410,9 +418,9 @@ fn redemption_fails_for_unaccepted_issuer() {
 
     // ...but no OR branch is real, so the Verifier rejects the presentation.
     for claimed_index in 0..accepted.len() {
-        let pres = issued.clone().show(&accepted, claimed_index, &mut rng);
+        let pres = issued.clone().show(&accepted, claimed_index, BINDING, &mut rng);
         assert!(
-            !pres.verify(&pp, &accepted),
+            !pres.verify(&pp, &accepted, BINDING),
             "unaccepted issuer must fail redemption (claimed {claimed_index})"
         );
     }

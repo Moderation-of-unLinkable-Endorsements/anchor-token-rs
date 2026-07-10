@@ -114,6 +114,12 @@ struct {
   `H`) are RFC 9380 constructions over P-256, each with a distinct tag of the
   form `MOLE-IHAT-P256:<use>:v1`. They are not part of the wire format but
   are fixed by the protocol.
+- **Presentation binding.** The OR-proof's Fiat–Shamir challenge additionally
+  absorbs a caller-supplied byte string (the `binding` argument of `show` /
+  `verify`, length-prefixed) that never crosses the wire: both parties must
+  supply the same bytes out of band — e.g. MoLE's `challenge_digest`, the
+  SHA-256 hash of the Moderator's challenge — so a `Presentation` produced
+  for one context fails verification in every other.
 - **Length framing.** The Fiat–Shamir transcripts length-prefix every
   variable-count group, so hashing is injective independent of this wire framing.
 - **`endorsement_context` consistency.** It appears in both `SignatureRequest`

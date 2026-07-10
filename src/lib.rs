@@ -49,8 +49,8 @@
 //!                                         ◀─Proof────────────  AnchorNeedsProofRequest::prove
 //! ClientNeedsProof::finalize                  ⇒ IssuedEndorsement (endorsement + witness γ)
 //!
-//! IssuedEndorsement::show(AccSet, j*)         ⇒ Presentation
-//! Presentation::verify(AccSet)                ⇒ accept / reject
+//! IssuedEndorsement::show(AccSet, j*, binding) ⇒ Presentation
+//! Presentation::verify(AccSet, binding)        ⇒ accept / reject
 //! ```
 //!
 //! ## Example
@@ -78,9 +78,11 @@
 //! let proof = anchor.prove(proof_request);
 //! let issued = client.finalize(&pp, proof).expect("honest issuance succeeds");
 //!
-//! // Redemption: present with a 1-of-n OR-proof; the issuer stays hidden.
-//! let presentation = issued.show(&accepted, 2, &mut rng);
-//! assert!(presentation.verify(&pp, &accepted));
+//! // Redemption: present with a 1-of-n OR-proof; the issuer stays hidden. The
+//! // binding (e.g. a hash of the verifier's challenge) scopes the proof: verify
+//! // succeeds only under the same bytes.
+//! let presentation = issued.show(&accepted, 2, b"challenge-digest", &mut rng);
+//! assert!(presentation.verify(&pp, &accepted, b"challenge-digest"));
 //! ```
 //!
 //! The construction follows the `GetEnd` figure in the MoLE notes; security

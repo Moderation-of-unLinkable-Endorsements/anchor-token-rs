@@ -5,6 +5,9 @@ use crate::client::ClientNeedsSignature;
 use crate::{Params, Presentation, WireError, WireFormat};
 use rand_core::{OsRng, RngCore};
 
+/// The presentation binding used by the sample presentation and its checks.
+const BINDING: &[u8] = b"wire-test-binding";
+
 fn random_nullifier() -> Vec<u8> {
     let mut nf = [0u8; 32];
     OsRng.fill_bytes(&mut nf);
@@ -28,7 +31,7 @@ fn sample() -> Sample {
     let proof = anchor.prove(proof_request);
     let issued = client.finalize(&pp, proof).unwrap();
     let endorsement = issued.endorsement.clone();
-    let presentation = issued.show(&accepted, 0, &mut rng);
+    let presentation = issued.show(&accepted, 0, BINDING, &mut rng);
 
     Sample {
         pp,
@@ -82,7 +85,7 @@ fn round_trip_preserves_validity() {
     assert!(end.dleq_valid(&s.pp));
 
     let pres = Presentation::from_bytes(&s.presentation.to_bytes().unwrap()).unwrap();
-    assert!(pres.verify(&s.pp, &s.accepted));
+    assert!(pres.verify(&s.pp, &s.accepted, BINDING));
 }
 
 #[test]
@@ -136,5 +139,5 @@ fn serde_delegates_to_wire_format() {
 
     // And it round-trips back to a verifying presentation.
     let pres: Presentation = serde_json::from_slice(&json).unwrap();
-    assert!(pres.verify(&s.pp, &s.accepted));
+    assert!(pres.verify(&s.pp, &s.accepted, BINDING));
 }

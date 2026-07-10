@@ -19,6 +19,9 @@ use rand_core::{OsRng, RngCore};
 
 const CTX: &[u8] = b"epoch-2026-07";
 
+/// The presentation binding (a stand-in challenge digest) used by show/verify.
+const BINDING: &[u8] = b"bench-binding";
+
 fn random_nullifier() -> Vec<u8> {
     let mut nf = [0u8; 32];
     OsRng.fill_bytes(&mut nf);
@@ -139,14 +142,14 @@ fn bench_redemption(c: &mut Criterion) {
         g.bench_with_input(BenchmarkId::new("show", n), &n, |b, _| {
             b.iter_batched(
                 || issued.clone(),
-                |i| i.show(&accepted, true_index, &mut OsRng),
+                |i| i.show(&accepted, true_index, BINDING, &mut OsRng),
                 BatchSize::SmallInput,
             )
         });
 
-        let pres = issued.clone().show(&accepted, true_index, &mut OsRng);
+        let pres = issued.clone().show(&accepted, true_index, BINDING, &mut OsRng);
         g.bench_with_input(BenchmarkId::new("verify", n), &n, |b, _| {
-            b.iter(|| pres.verify(&pp, &accepted))
+            b.iter(|| pres.verify(&pp, &accepted, BINDING))
         });
     }
 

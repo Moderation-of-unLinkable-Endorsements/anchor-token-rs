@@ -17,6 +17,9 @@ use crate::{Point, Scalar};
 use elliptic_curve::Field;
 use rand_core::OsRng;
 
+/// The presentation binding used throughout these tests.
+const BINDING: &[u8] = b"orproof-test-binding";
+
 /// A uniform nonzero scalar.
 fn nonzero_scalar() -> Scalar {
     loop {
@@ -46,8 +49,8 @@ fn single_key_verifies() {
     let gamma = nonzero_scalar();
     let x_hat = accepted[0] * gamma;
 
-    let proof = OrProof::prove(&accepted, &x_hat, 0, gamma, &mut OsRng);
-    assert!(proof.verify(&accepted, &x_hat), "1-of-1 OR must verify");
+    let proof = OrProof::prove(&accepted, &x_hat, 0, gamma, BINDING, &mut OsRng);
+    assert!(proof.verify(&accepted, &x_hat, BINDING), "1-of-1 OR must verify");
 }
 
 /// `verify`'s empty-set guard: an empty accepted set is never satisfiable, so a
@@ -58,7 +61,7 @@ fn empty_accepted_set_rejected() {
         transcripts: Vec::new(),
     };
     assert!(
-        !proof.verify(&[], &Point::GENERATOR),
+        !proof.verify(&[], &Point::GENERATOR, BINDING),
         "empty accepted set must be rejected"
     );
 }
@@ -71,14 +74,14 @@ fn transcript_count_mismatch_rejected() {
     let accepted = accepted_set(4);
     let gamma = nonzero_scalar();
     let x_hat = accepted[2] * gamma;
-    let proof = OrProof::prove(&accepted, &x_hat, 2, gamma, &mut OsRng);
-    assert!(proof.verify(&accepted, &x_hat));
+    let proof = OrProof::prove(&accepted, &x_hat, 2, gamma, BINDING, &mut OsRng);
+    assert!(proof.verify(&accepted, &x_hat, BINDING));
 
     // One transcript too few.
     let mut short = proof.clone();
     short.transcripts.pop();
     assert!(
-        !short.verify(&accepted, &x_hat),
+        !short.verify(&accepted, &x_hat, BINDING),
         "too few transcripts must be rejected"
     );
 
@@ -86,13 +89,13 @@ fn transcript_count_mismatch_rejected() {
     let mut long = proof.clone();
     long.transcripts.push(long.transcripts[0]);
     assert!(
-        !long.verify(&accepted, &x_hat),
+        !long.verify(&accepted, &x_hat, BINDING),
         "too many transcripts must be rejected"
     );
 
     // Right count, but checked against a smaller accepted set.
     assert!(
-        !proof.verify(&accepted[..3], &x_hat),
+        !proof.verify(&accepted[..3], &x_hat, BINDING),
         "count must match the accepted set passed to verify"
     );
 }
@@ -107,9 +110,9 @@ fn duplicate_keys_complete() {
 
     for &idx in &[0usize, 3] {
         let x_hat = accepted[idx] * gamma;
-        let proof = OrProof::prove(&accepted, &x_hat, idx, gamma, &mut OsRng);
+        let proof = OrProof::prove(&accepted, &x_hat, idx, gamma, BINDING, &mut OsRng);
         assert!(
-            proof.verify(&accepted, &x_hat),
+            proof.verify(&accepted, &x_hat, BINDING),
             "duplicate-key set must still verify (branch {idx})"
         );
     }
@@ -125,9 +128,9 @@ fn identity_key_in_accepted_set_rejected() {
     let gamma = nonzero_scalar();
 
     let x_hat = accepted[0] * gamma; // honest proof for a real branch
-    let proof = OrProof::prove(&accepted, &x_hat, 0, gamma, &mut OsRng);
+    let proof = OrProof::prove(&accepted, &x_hat, 0, gamma, BINDING, &mut OsRng);
     assert!(
-        !proof.verify(&accepted, &x_hat),
+        !proof.verify(&accepted, &x_hat, BINDING),
         "accepted set with an identity key must be rejected"
     );
 }
@@ -136,7 +139,7 @@ fn identity_key_in_accepted_set_rejected() {
 #[test]
 #[should_panic(expected = "accepted set must be non-empty")]
 fn prove_panics_on_empty_set() {
-    let _ = OrProof::prove(&[], &Point::GENERATOR, 0, Scalar::ONE, &mut OsRng);
+    let _ = OrProof::prove(&[], &Point::GENERATOR, 0, Scalar::ONE, BINDING, &mut OsRng);
 }
 
 /// `prove` requires `true_index` to be within range.
@@ -144,7 +147,7 @@ fn prove_panics_on_empty_set() {
 #[should_panic(expected = "true branch out of range")]
 fn prove_panics_on_out_of_range_index() {
     let accepted = accepted_set(3);
-    let _ = OrProof::prove(&accepted, &Point::GENERATOR, 3, Scalar::ONE, &mut OsRng);
+    let _ = OrProof::prove(&accepted, &Point::GENERATOR, 3, Scalar::ONE, BINDING, &mut OsRng);
 }
 
 // ---------------------------------------------------------------------------
@@ -159,12 +162,12 @@ fn tampered_response_rejected() {
     let accepted = accepted_set(5);
     let gamma = nonzero_scalar();
     let x_hat = accepted[1] * gamma;
-    let mut proof = OrProof::prove(&accepted, &x_hat, 1, gamma, &mut OsRng);
-    assert!(proof.verify(&accepted, &x_hat));
+    let mut proof = OrProof::prove(&accepted, &x_hat, 1, gamma, BINDING, &mut OsRng);
+    assert!(proof.verify(&accepted, &x_hat, BINDING));
 
     proof.transcripts[3].s += Scalar::ONE;
     assert!(
-        !proof.verify(&accepted, &x_hat),
+        !proof.verify(&accepted, &x_hat, BINDING),
         "tampered response must be rejected"
     );
 }
@@ -177,12 +180,12 @@ fn tampered_commitment_rejected() {
     let accepted = accepted_set(5);
     let gamma = nonzero_scalar();
     let x_hat = accepted[4] * gamma;
-    let mut proof = OrProof::prove(&accepted, &x_hat, 4, gamma, &mut OsRng);
-    assert!(proof.verify(&accepted, &x_hat));
+    let mut proof = OrProof::prove(&accepted, &x_hat, 4, gamma, BINDING, &mut OsRng);
+    assert!(proof.verify(&accepted, &x_hat, BINDING));
 
     proof.transcripts[0].t += Point::GENERATOR;
     assert!(
-        !proof.verify(&accepted, &x_hat),
+        !proof.verify(&accepted, &x_hat, BINDING),
         "tampered commitment must be rejected"
     );
 }
@@ -195,12 +198,12 @@ fn tampered_subchallenge_rejected() {
     let accepted = accepted_set(5);
     let gamma = nonzero_scalar();
     let x_hat = accepted[2] * gamma;
-    let mut proof = OrProof::prove(&accepted, &x_hat, 2, gamma, &mut OsRng);
-    assert!(proof.verify(&accepted, &x_hat));
+    let mut proof = OrProof::prove(&accepted, &x_hat, 2, gamma, BINDING, &mut OsRng);
+    assert!(proof.verify(&accepted, &x_hat, BINDING));
 
     proof.transcripts[2].c += Scalar::ONE;
     assert!(
-        !proof.verify(&accepted, &x_hat),
+        !proof.verify(&accepted, &x_hat, BINDING),
         "tampered sub-challenge must be rejected"
     );
 }
@@ -230,7 +233,7 @@ fn challenge_split_forgery_rejected() {
     // Every branch is individually consistent, so only the Σ cⱼ == c check can
     // reject it — and it does.
     assert!(
-        !forgery.verify(&accepted, &x_hat),
+        !forgery.verify(&accepted, &x_hat, BINDING),
         "simulated all-branch forgery must fail the challenge-sum check"
     );
 }
@@ -245,10 +248,49 @@ fn wrong_true_index_rejected() {
     let real_index = 1;
     let x_hat = accepted[real_index] * gamma; // X_hat = γ·B₁
 
-    let proof = OrProof::prove(&accepted, &x_hat, 3, gamma, &mut OsRng); // claims branch 3
+    let proof = OrProof::prove(&accepted, &x_hat, 3, gamma, BINDING, &mut OsRng); // claims branch 3
     assert!(
-        !proof.verify(&accepted, &x_hat),
+        !proof.verify(&accepted, &x_hat, BINDING),
         "proof built for the wrong branch must not verify"
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Presentation binding
+// ---------------------------------------------------------------------------
+
+/// The binding is part of the Fiat–Shamir input: a proof made under one binding
+/// must fail under any other (different bytes, a truncation, or empty), and an
+/// empty binding is itself a valid, distinct context.
+#[test]
+fn binding_mismatch_rejected() {
+    let accepted = accepted_set(4);
+    let gamma = nonzero_scalar();
+    let x_hat = accepted[2] * gamma;
+
+    let proof = OrProof::prove(&accepted, &x_hat, 2, gamma, BINDING, &mut OsRng);
+    assert!(proof.verify(&accepted, &x_hat, BINDING));
+    assert!(
+        !proof.verify(&accepted, &x_hat, b"some-other-binding"),
+        "different binding must be rejected"
+    );
+    assert!(
+        !proof.verify(&accepted, &x_hat, &BINDING[..BINDING.len() - 1]),
+        "truncated binding must be rejected"
+    );
+    assert!(
+        !proof.verify(&accepted, &x_hat, b""),
+        "empty binding must be rejected when the proof was bound"
+    );
+
+    let unbound = OrProof::prove(&accepted, &x_hat, 2, gamma, b"", &mut OsRng);
+    assert!(
+        unbound.verify(&accepted, &x_hat, b""),
+        "empty binding is a valid context of its own"
+    );
+    assert!(
+        !unbound.verify(&accepted, &x_hat, BINDING),
+        "unbound proof must not verify under a binding"
     );
 }
 
@@ -265,9 +307,9 @@ fn identity_statement_is_rejected() {
     let x_hat = Point::IDENTITY;
 
     for idx in [0usize, 2] {
-        let proof = OrProof::prove(&accepted, &x_hat, idx, Scalar::ZERO, &mut OsRng);
+        let proof = OrProof::prove(&accepted, &x_hat, idx, Scalar::ZERO, BINDING, &mut OsRng);
         assert!(
-            !proof.verify(&accepted, &x_hat),
+            !proof.verify(&accepted, &x_hat, BINDING),
             "identity statement must be rejected (claimed branch {idx})"
         );
     }

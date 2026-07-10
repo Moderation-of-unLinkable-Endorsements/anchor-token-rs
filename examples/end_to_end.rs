@@ -50,17 +50,22 @@ fn main() {
     println!("  Endorsement's DLEQ proof is well-formed (issuer not yet bound): OK");
 
     // Redemption: present with a 1-of-n OR-proof; the Verifier learns nothing
-    // about which of the 4 anchors issued.
+    // about which of the 4 anchors issued. The binding — in a deployment, a
+    // hash of the Verifier's challenge — scopes the presentation to this
+    // exchange, so it cannot be replayed against a different challenge.
     println!("\n== Redemption (Show) ==");
-    let presentation = issued.show(&accepted, issuer_index, &mut rng);
+    let binding = b"verifier-challenge-digest";
+    let presentation = issued.show(&accepted, issuer_index, binding, &mut rng);
     println!(
         "  Client sends Presentation: endorsement + 1-of-{} OR-proof",
         accepted.len()
     );
 
-    let accepted_by_verifier = presentation.verify(&pp, &accepted);
+    let accepted_by_verifier = presentation.verify(&pp, &accepted, binding);
     assert!(accepted_by_verifier);
     println!("  Verifier accepts (issuer identity hidden): OK");
+    assert!(!presentation.verify(&pp, &accepted, b"a-different-challenge"));
+    println!("  Same presentation under another challenge digest is rejected: OK");
 
     // Sanity: an endorsement from a non-accepted anchor is rejected. (Same
     // four-step issuance as above, just with an anchor outside the accepted set.)
@@ -73,8 +78,8 @@ fn main() {
     let (proof_request, client) = client.request_proof(&pp, rogue.public_key(&pp), signature);
     let proof = anchor.prove(proof_request);
     let rogue_issued = client.finalize(&pp, proof).unwrap();
-    let rogue_pres = rogue_issued.show(&accepted, 0, &mut rng);
-    assert!(!rogue_pres.verify(&pp, &accepted));
+    let rogue_pres = rogue_issued.show(&accepted, 0, binding, &mut rng);
+    assert!(!rogue_pres.verify(&pp, &accepted, binding));
     println!("\n  Endorsement from a non-accepted anchor is rejected: OK");
 
     println!("\nAll checks passed.");

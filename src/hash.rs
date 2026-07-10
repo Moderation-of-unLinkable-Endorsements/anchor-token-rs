@@ -96,25 +96,36 @@ pub(crate) fn fiat_shamir(
 }
 
 /// The Fiat–Shamir challenge for the redemption OR-proof: hashes the accepted
-/// Anchor keys, the rerandomised key `X_hat`, and the OR commitments. Binding
+/// Anchor keys, the rerandomised key `X_hat`, the OR commitments, and the
+/// presentation `binding` — caller-supplied bytes (e.g. a hash of the
+/// challenge that prompted the presentation) that scope the proof, so a
+/// presentation produced for one binding never verifies under another. Binding
 /// `AccSet` and `X_hat` (not just the commitments) is a soundness improvement in
-/// the ROM; each variable-count group is length-prefixed, so the transcript is
-/// injective for any shape — not only when the number of keys equals the number
-/// of commitments.
-pub(crate) fn fiat_shamir_or(accepted: &[Point], x_hat: &Point, commitments: &[Point]) -> Scalar {
+/// the ROM; each variable-count group and the binding are length-prefixed, so
+/// the transcript is injective for any shape — not only when the number of keys
+/// equals the number of commitments.
+pub(crate) fn fiat_shamir_or(
+    accepted: &[Point],
+    x_hat: &Point,
+    commitments: &[Point],
+    binding: &[u8],
+) -> Scalar {
     const DST_OR: &[u8] = b"MOLE-IHAT-P256:fiat-shamir-or-proof:v1";
     let n_acc = len_prefix(accepted.len());
     let n_com = len_prefix(commitments.len());
     let acc: Vec<[u8; 33]> = accepted.iter().map(compress).collect();
     let com: Vec<[u8; 33]> = commitments.iter().map(compress).collect();
     let xh = compress(x_hat);
+    let binding_len = len_prefix(binding.len());
 
-    let mut refs: Vec<&[u8]> = Vec::with_capacity(acc.len() + com.len() + 3);
+    let mut refs: Vec<&[u8]> = Vec::with_capacity(acc.len() + com.len() + 5);
     refs.push(&n_acc);
     refs.extend(acc.iter().map(|p| p.as_slice()));
     refs.push(&xh);
     refs.push(&n_com);
     refs.extend(com.iter().map(|p| p.as_slice()));
+    refs.push(&binding_len);
+    refs.push(binding);
     hash_to_scalar(DST_OR, &refs)
 }
 

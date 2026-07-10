@@ -33,9 +33,11 @@ let (proof_request, client) = client.request_proof(&pp, issuer.public_key(&pp), 
 let proof = anchor.prove(proof_request);
 let issued = client.finalize(&pp, proof).unwrap();
 
-// Redeem, hiding which anchor issued it.
-let pres = issued.show(&accepted, 2, &mut rng);
-assert!(pres.verify(&pp, &accepted));
+// Redeem, hiding which anchor issued it. The binding (e.g. a hash of the
+// verifier's challenge) scopes the presentation to the context that
+// requested it.
+let pres = issued.show(&accepted, 2, b"challenge-digest", &mut rng);
+assert!(pres.verify(&pp, &accepted, b"challenge-digest"));
 ```
 
 ## Build & test
